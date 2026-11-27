@@ -142,7 +142,7 @@
   const saved = sessionStorage.getItem('kp_room');
   socket.on('connect', () => {
     const code = (state && state.code) || saved;
-    if (code) socket.emit('join_room', { code, playerId, name: localStorage.getItem('kp_name') || 'Player', avatar });
+    if (code) socket.emit('join_room', { code, playerId, name: localStorage.getItem('kp_name') || '', avatar });
   });
 
   socket.on('joined', ({ code }) => {
@@ -257,12 +257,12 @@
           <div class="bubble" style="${i<old?'animation:none':''}">${av(p)}${p.id===state.hostId?'<span class="crownmark" title="Host">⭐</span>':''}</div>
           <div class="nm">${esc(p.name)}${p.id===playerId?' (You)':''}</div></div>`;
       } else {
-        html += `<div class="seat empty"><div class="bubble">＋</div><div class="nm">Player ${i+1}</div></div>`;
+        html += `<div class="seat empty"><div class="bubble">＋</div><div class="nm">Waiting…</div></div>`;
       }
     }
     seats.innerHTML = html;
     const left = state.needed - state.players.length;
-    $('#lobby-sub').textContent = left > 0 ? `${left} more player${left>1?'s':''} needed · ${state.roomName}` : 'All here! Dealing chits…';
+    $('#lobby-sub').textContent = left > 0 ? `${left} more player${left>1?'s':''} needed${state.roomName ? ' · ' + state.roomName : ''}` : 'All here! Dealing chits…';
   }
 
   function renderReveal(fresh) {

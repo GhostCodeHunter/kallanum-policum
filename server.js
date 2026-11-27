@@ -47,7 +47,7 @@ function shuffle(arr) {
 }
 
 function cleanName(n) {
-  return String(n || '').replace(/[<>]/g, '').trim().slice(0, 16) || 'Player';
+  return String(n || '').replace(/[<>]/g, '').trim().slice(0, 16);
 }
 
 function findPlayer(room, id) {
@@ -151,7 +151,7 @@ function finishRound(room, guessedId) {
 function newRoom(hostId, roomName, totalRounds) {
   const room = {
     code: makeCode(),
-    roomName: cleanName(roomName) || 'Fun Squad',
+    roomName: cleanName(roomName),
     hostId,
     phase: 'lobby',
     round: 0,
@@ -177,10 +177,11 @@ io.on('connection', socket => {
 
   function attach(room, playerId, name, avatar) {
     let p = findPlayer(room, playerId);
+    if (!p && !cleanName(name)) return err('Enter your name first.');
     if (p) {
       p.socketId = socket.id;
       p.connected = true;
-      if (name) p.name = cleanName(name);
+      if (cleanName(name)) p.name = cleanName(name);
     } else {
       if (room.phase !== 'lobby') return err('Game already started. Ask the host for a new room.');
       if (room.players.length >= PLAYERS_NEEDED) return err('Room is full (5 players).');
@@ -212,6 +213,7 @@ io.on('connection', socket => {
 
   socket.on('create_room', ({ playerId, name, avatar, roomName, rounds } = {}) => {
     if (!playerId || typeof playerId !== 'string') return err('Bad player id');
+    if (!cleanName(name)) return err('Enter your name first.');
     const room = newRoom(playerId, roomName, rounds);
     attach(room, playerId, name, avatar);
   });

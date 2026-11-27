@@ -8,7 +8,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👮</text></svg>" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Baloo+Chettan+2:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Chettan+2:wght@500;600;700;800&family=Noto+Sans+Malayalam:wght@500;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -64,8 +64,8 @@
     </div>
 
     <div class="card form-card pop-in">
-      <label class="lbl" for="in-name">നിങ്ങളുടെ പേര് · Your name</label>
-      <input id="in-name" maxlength="16" placeholder="e.g. Sreedas" autocomplete="nickname" />
+      <label class="lbl" for="in-name"><span class="ml">നിങ്ങളുടെ പേര്</span> · Your name</label>
+      <input id="in-name" maxlength="16" autocomplete="nickname" />
       <div class="lbl">Avatar</div>
       <div class="avatars" id="avatars"></div>
       <div class="btn-row">
@@ -85,8 +85,8 @@
         <button class="icon-btn" data-go="home" aria-label="Back">←</button>
         <h2>Create Room</h2><span class="dice">🎲</span>
       </div>
-      <label class="lbl" for="in-room">Room Name</label>
-      <input id="in-room" maxlength="16" value="Fun Squad" />
+      <label class="lbl" for="in-room">Room Name <small>(optional)</small></label>
+      <input id="in-room" maxlength="16" />
       <div class="lbl">Rounds · റൗണ്ടുകൾ</div>
       <div class="stepper">
         <button class="round-btn" id="r-minus" aria-label="Fewer rounds">−</button>
@@ -106,7 +106,7 @@
         <h2>Join a Room</h2><span class="dice">🃏</span>
       </div>
       <label class="lbl" for="in-code">Room Code</label>
-      <input id="in-code" class="code-input" maxlength="5" placeholder="AB123" autocapitalize="characters" />
+      <input id="in-code" class="code-input" maxlength="5" autocapitalize="characters" />
       <button class="btn btn-purple wide" id="btn-join">Join Game ➜</button>
     </div>
   </section>

@@ -334,3 +334,5 @@ input:focus{border-color:var(--purple);box-shadow:0 0 0 5px rgba(108,59,214,.2);
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+.ml{font-family:'Noto Sans Malayalam','Baloo Chettan 2',sans-serif}
+.lbl small{font-weight:500;opacity:.7}
