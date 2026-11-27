@@ -1,8 +1,10 @@
 # കള്ളനും പോലീസും · Kallanum Policum
 
-![Police turn](screenshot.png)
+_A game made by **Chumi**._
 
-Multiplayer Malayalam chit game for 5 friends. Kerala night theme, animated cards, confetti, sound, emoji reactions.
+![Final scoreboard](screenshot.png)
+
+Multiplayer Malayalam chit game for 5 friends. Kerala night theme, cartoon characters, animated cards, Kerala-folk background music, voice chat, fireworks and emoji reactions.
 
 ## Rules
 | Role | Points |
@@ -17,6 +19,9 @@ Flow: create room → share code → 5th player joins → server shuffles chits 
 
 ## Security
 Roles are shuffled on the server with `crypto.randomInt`. Each player's role is sent only to that player's socket. Room state sent to everyone hides roles until the game reveals them (Raja, then Police, then all after the guess).
+
+## Voice chat
+Tap **🎙️ Voice** in a room. Audio goes player-to-player (WebRTC); the server only passes connection messages. Some strict mobile/office networks may block it.
 
 ## Run locally
 ```bash
@@ -35,4 +40,6 @@ Needs a server that keeps WebSockets open — Netlify / GitHub Pages will NOT wo
 
 Railway, Fly.io or Glitch also work the same way.
 
-Note: free Render sleeps when idle — first open takes ~30 s.
+Note: free Render sleeps when idle — first open takes ~50 s.
+
+Live: https://kallanum-policum-52si.onrender.com

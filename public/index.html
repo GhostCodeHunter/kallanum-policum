@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 <title>കള്ളനും പോലീസും · Kallanum Policum</title>
 <meta name="theme-color" content="#1a1140" />
+<meta name="author" content="Chumi" />
+<meta name="description" content="കള്ളനും പോലീസും — a multiplayer Malayalam chit game by Chumi" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👮</text></svg>" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -77,6 +79,7 @@
     <div class="links">
       <button class="link" data-go="how">ⓘ How to Play · കളി നിയമം</button>
     </div>
+    <div class="credit">A game made with <span class="heart">♥</span> by <b>Chumi</b></div>
   </section>
 
   <!-- ===== CREATE ===== -->
@@ -244,6 +247,7 @@
       <button class="btn btn-purple hidden" id="btn-again">↻ Play Again</button>
       <button class="btn btn-green" id="btn-home">⌂ Back to Home</button>
     </div>
+    <div class="credit">A game made with <span class="heart">♥</span> by <b>Chumi</b></div>
   </section>
 
   <!-- ===== Shared: score strip + emoji reactions ===== -->
@@ -251,6 +255,10 @@
   <div class="reactions hidden" id="reactions"></div>
 </main>
 
+<div class="voice-bar hidden" id="voice-bar">
+  <button class="voice-btn" id="btn-voice" aria-label="Join voice chat"><span class="vi">🎙️</span><span class="vt">Voice</span></button>
+  <button class="voice-btn mute hidden" id="btn-mute" aria-label="Mute microphone"><span class="vi">🔈</span></button>
+</div>
 <button class="sound-btn" id="btn-sound" aria-label="Sound on or off">🔊</button>
 <div class="toasts" id="toasts"></div>
 <canvas id="confetti"></canvas>

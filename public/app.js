@@ -21,7 +21,6 @@
     localStorage.setItem('kp_id', playerId);
   }
   let avatar = parseInt(localStorage.getItem('kp_av') || '0', 10) || 0;
-  $('#in-name').value = localStorage.getItem('kp_name') || '';
 
   const socket = io();
   let state = null, myRole = null, flipped = false, lastPhase = null, lastRound = 0, timerInt = null, prevScores = {};
@@ -296,7 +295,8 @@
     state = null; myRole = null;
     sessionStorage.removeItem('kp_room');
     history.replaceState(null, '', location.pathname);
-    $('#scorestrip').classList.add('hidden'); $('#reactions').classList.add('hidden');
+    leaveVoice(true);
+    $('#scorestrip').classList.add('hidden'); $('#reactions').classList.add('hidden'); $('#voice-bar').classList.add('hidden');
     show('s-home');
   }
   $('#btn-copy').onclick = async () => {
@@ -330,6 +330,105 @@
     $('#reactions').appendChild(b);
   });
 
+
+  // ---------- VOICE CHAT (WebRTC mesh, up to 5 people; server only relays signals) ----------
+  const ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }] };
+  const peers = new Map(); // playerId -> { pc, audio }
+  let localStream = null, inVoice = false, micMuted = false;
+  const meters = new Map(); // playerId -> analyser
+
+  function watchLevel(id, stream) {
+    try {
+      const c = ac(), src = c.createMediaStreamSource(stream), an = c.createAnalyser();
+      an.fftSize = 512; src.connect(an); meters.set(id, an);
+    } catch {}
+  }
+  const buf = new Uint8Array(256);
+  setInterval(() => {
+    meters.forEach((an, id) => {
+      an.getByteFrequencyData(buf);
+      let sum = 0; for (let i = 0; i < buf.length; i++) sum += buf[i];
+      const talking = sum / buf.length > 18 && !(id === playerId && micMuted);
+      document.querySelectorAll(`[data-pid="${id}"]`).forEach(el => el.classList.toggle('talking', talking));
+    });
+  }, 120);
+
+  function makePeer(id, initiator) {
+    if (peers.has(id)) return peers.get(id);
+    const pc = new RTCPeerConnection(ICE);
+    const audio = new Audio(); audio.autoplay = true; audio.playsInline = true;
+    const peer = { pc, audio };
+    peers.set(id, peer);
+    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    pc.onicecandidate = e => e.candidate && socket.emit('rtc_signal', { to: id, data: { ice: e.candidate } });
+    pc.ontrack = e => { audio.srcObject = e.streams[0]; audio.play().catch(() => {}); watchLevel(id, e.streams[0]); };
+    pc.onconnectionstatechange = () => { if (['failed', 'closed'].includes(pc.connectionState)) dropPeer(id); };
+    if (initiator) {
+      pc.createOffer().then(o => pc.setLocalDescription(o))
+        .then(() => socket.emit('rtc_signal', { to: id, data: { sdp: pc.localDescription } }));
+    }
+    return peer;
+  }
+  function dropPeer(id) {
+    const p = peers.get(id); if (!p) return;
+    try { p.pc.close(); } catch {} p.audio.srcObject = null;
+    peers.delete(id); meters.delete(id);
+    document.querySelectorAll(`[data-pid="${id}"]`).forEach(el => el.classList.remove('talking'));
+  }
+  socket.on('voice_peers', ids => ids.forEach(id => makePeer(id, true)));
+  socket.on('voice_gone', id => dropPeer(id));
+  socket.on('rtc_signal', async ({ from, data }) => {
+    if (!inVoice) return;
+    const { pc } = makePeer(from, false);
+    try {
+      if (data.sdp) {
+        await pc.setRemoteDescription(data.sdp);
+        if (data.sdp.type === 'offer') {
+          await pc.setLocalDescription(await pc.createAnswer());
+          socket.emit('rtc_signal', { to: from, data: { sdp: pc.localDescription } });
+        }
+      } else if (data.ice) await pc.addIceCandidate(data.ice);
+    } catch (e) { console.warn('voice', e); }
+  });
+
+  async function joinVoice() {
+    if (!navigator.mediaDevices || !window.RTCPeerConnection) return toast('Voice chat not supported in this browser', 'error');
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    } catch { return toast('Microphone blocked. Allow mic access to talk.', 'error'); }
+    inVoice = true; micMuted = false;
+    watchLevel(playerId, localStream);
+    socket.emit('voice_join');
+    if (musicBus) musicBus.gain.setTargetAtTime(.08, actx.currentTime, .3); // duck music while talking
+    updateVoiceUI(); toast('🎙️ Voice on — friends can hear you', 'ok'); sfx.join();
+  }
+  function leaveVoice(silent) {
+    if (!inVoice) return;
+    socket.emit('voice_leave');
+    [...peers.keys()].forEach(dropPeer);
+    meters.delete(playerId);
+    localStream && localStream.getTracks().forEach(t => t.stop());
+    localStream = null; inVoice = false;
+    if (musicBus) musicBus.gain.setTargetAtTime(.32, actx.currentTime, .3);
+    updateVoiceUI(); if (!silent) sfx.leave();
+  }
+  function updateVoiceUI() {
+    const b = $('#btn-voice'), m = $('#btn-mute');
+    b.classList.toggle('on', inVoice);
+    b.querySelector('.vt').textContent = inVoice ? 'Leave' : 'Voice';
+    b.setAttribute('aria-label', inVoice ? 'Leave voice chat' : 'Join voice chat');
+    m.classList.toggle('hidden', !inVoice);
+    m.classList.toggle('muted', micMuted);
+    m.querySelector('.vi').textContent = micMuted ? '🔇' : '🔈';
+    m.setAttribute('aria-label', micMuted ? 'Unmute microphone' : 'Mute microphone');
+  }
+  $('#btn-voice').onclick = () => inVoice ? leaveVoice() : joinVoice();
+  $('#btn-mute').onclick = () => {
+    micMuted = !micMuted;
+    localStream && localStream.getAudioTracks().forEach(t => t.enabled = !micMuted);
+    updateVoiceUI();
+  };
+
   // ---------- render ----------
   const me = () => state && state.players.find(p => p.id === playerId);
   const isHost = () => state && state.hostId === playerId;
@@ -348,6 +447,7 @@
     $$('.room-code-txt').forEach(el => el.textContent = s.code);
     renderStrip();
     $('#reactions').classList.remove('hidden');
+    $('#voice-bar').classList.remove('hidden');
     clearInterval(timerInt);
 
     switch (s.phase) {
@@ -369,7 +469,7 @@
     const sorted = [...state.players].sort((a,b) => b.score - a.score);
     strip.innerHTML = sorted.map(p => {
       const up = prevScores[p.id] !== undefined && prevScores[p.id] !== p.score;
-      return `<div class="ss ${up?'up':''}"><span class="e">${av(p)}</span>${esc(p.name)}${p.id===playerId?' (You)':''} <b>${p.score}</b></div>`;
+      return `<div class="ss ${up?'up':''}" data-pid="${p.id}"><span class="e">${av(p)}</span>${(state.voice||[]).includes(p.id)?'<span class="mic">🎙️</span>':''}${esc(p.name)}${p.id===playerId?' (You)':''} <b>${p.score}</b></div>`;
     }).join('');
     state.players.forEach(p => prevScores[p.id] = p.score);
   }
@@ -380,7 +480,7 @@
     for (let i = 0; i < state.needed; i++) {
       const p = state.players[i];
       if (p) {
-        html += `<div class="seat filled ${p.id===playerId?'me':''} ${p.connected?'':'off'}" style="${i<old?'animation:none':''}">
+        html += `<div class="seat filled ${p.id===playerId?'me':''} ${p.connected?'':'off'}" data-pid="${p.id}" style="${i<old?'animation:none':''}">
           <div class="bubble" style="${i<old?'animation:none':''}">${av(p)}${p.id===state.hostId?'<span class="crownmark" title="Host">⭐</span>':''}</div>
           <div class="nm">${esc(p.name)}${p.id===playerId?' (You)':''}</div></div>`;
       } else {
@@ -405,7 +505,7 @@
     $('#btn-gotit').disabled = !flipped || (mine && mine.ready);
     if (mine && mine.ready) $('#btn-gotit').textContent = 'Ready ✓';
     $('#ready-list').innerHTML = state.players.map(p =>
-      `<div class="chip ${p.ready?'ok':''}"><span class="e">${av(p)}</span>${esc(p.name)} ${p.ready?'✓':'…'}</div>`).join('');
+      `<div class="chip ${p.ready?'ok':''}" data-pid="${p.id}"><span class="e">${av(p)}</span>${esc(p.name)} ${p.ready?'✓':'…'}</div>`).join('');
     const allReady = state.players.every(p => p.ready);
     $('#btn-start').classList.toggle('hidden', !isHost());
     $('#btn-start').disabled = !allReady;

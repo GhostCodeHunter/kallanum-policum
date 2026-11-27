@@ -89,6 +89,7 @@ function publicState(room) {
     policeDeadline: room.phase === 'police' ? room.policeDeadline : null,
     lastResult: (room.phase === 'result' || room.phase === 'final') ? room.lastResult : null,
     history: room.history,
+    voice: [...room.voice],
   };
 }
 
@@ -161,6 +162,7 @@ function newRoom(hostId, roomName, totalRounds) {
     ready: new Set(),
     lastResult: null,
     history: [],
+    voice: new Set(),
     timer: null,
     policeDeadline: null,
     createdAt: Date.now(),
@@ -294,6 +296,7 @@ io.on('connection', socket => {
     const room = getRoom();
     if (!room) return;
     socket.leave(room.code);
+    if (room.voice.delete(me.id)) io.to(room.code).emit('voice_gone', me.id);
     if (room.phase === 'lobby') {
       room.players = room.players.filter(p => p.id !== me.id);
     } else {
@@ -304,6 +307,29 @@ io.on('connection', socket => {
     me = null;
     if (room.players.length === 0) { clearTimer(room); rooms.delete(room.code); return; }
     broadcast(room);
+  });
+
+  // ----- voice chat: server only relays WebRTC signals between players in the same room -----
+  socket.on('voice_join', () => {
+    const room = getRoom(); if (!room) return;
+    const others = [...room.voice].filter(id => id !== me.id);
+    room.voice.add(me.id);
+    socket.emit('voice_peers', others); // the newcomer calls everyone already talking
+    broadcast(room);
+  });
+  socket.on('voice_leave', () => {
+    const room = getRoom(); if (!room) return;
+    room.voice.delete(me.id);
+    io.to(room.code).emit('voice_gone', me.id);
+    broadcast(room);
+  });
+  socket.on('rtc_signal', ({ to, data } = {}) => {
+    const room = getRoom(); if (!room || !room.voice.has(me.id)) return;
+    const target = findPlayer(room, to);
+    if (!target || !target.socketId || !room.voice.has(to)) return;
+    const json = JSON.stringify(data || {});
+    if (json.length > 20000) return;
+    io.to(target.socketId).emit('rtc_signal', { from: me.id, data });
   });
 
   socket.on('chat_emoji', ({ emoji } = {}) => {
@@ -318,6 +344,7 @@ io.on('connection', socket => {
     if (!room) return;
     const p = findPlayer(room, me.id);
     if (p && p.socketId === socket.id) {
+      if (room.voice.delete(p.id)) io.to(room.code).emit('voice_gone', p.id);
       p.connected = false;
       p.socketId = null;
       if (room.phase === 'lobby') {
