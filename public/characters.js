@@ -201,5 +201,24 @@
     <path d="M38 86 L82 86 L86 102 L34 102Z" fill="#7b4416" stroke="#3d1f08" stroke-width="3"/>
     <rect x="46" y="91" width="28" height="6" rx="2" fill="#f4b62a"/>`);
 
-  window.CHARS = { role: k => ROLE[k](), avatar, count: AV.length, trophy: TROPHY };
+
+  // Chibi Kallan: big round hooded head, small body, bag of loot (our own design)
+  const CHIBI = `<svg class="chibi" viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="60" cy="144" rx="30" ry="5" fill="#00000055"/>
+    <g class="chibi-legs"><path class="leg-l" d="M48 118 L44 140 L52 141 L55 120Z" fill="#2b2b33"/><path class="leg-r" d="M64 118 L68 140 L76 141 L72 120Z" fill="#2b2b33"/></g>
+    <path d="M38 96 Q60 88 82 96 L80 124 Q60 130 40 124Z" fill="#33333d"/>
+    <rect x="40" y="108" width="40" height="5" fill="#d8342b"/>
+    <g class="chibi-bag"><path d="M82 92 Q106 86 108 112 Q108 126 92 126 Q78 124 80 108Z" fill="#9b7a4a"/><path d="M84 92 Q92 84 100 90" stroke="#6b532f" stroke-width="3" fill="none"/><text x="88" y="116" font-size="14" font-weight="800" fill="#f4b62a" font-family="sans-serif">₹</text></g>
+    <path class="chibi-arm" d="M42 100 Q28 104 30 116" stroke="#33333d" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <g class="chibi-head">
+      <path d="M18 54 Q16 12 60 10 Q104 12 102 54 Q104 92 60 94 Q16 92 18 54Z" fill="#3a3a46"/>
+      <path d="M22 40 Q40 22 70 20" stroke="#ffffff22" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M100 30 Q114 22 116 36 Q108 34 102 40Z" fill="#3a3a46"/>
+      <path d="M100 30 Q116 40 112 54 Q106 44 101 44Z" fill="#2e2e38"/>
+      <rect x="28" y="42" width="64" height="24" rx="11" fill="#c98b5a"/>
+      <g class="chibi-eyes"><ellipse cx="47" cy="54" rx="5" ry="6" fill="#1c1208"/><ellipse cx="73" cy="54" rx="5" ry="6" fill="#1c1208"/><circle cx="48.5" cy="52" r="1.7" fill="#fff"/><circle cx="74.5" cy="52" r="1.7" fill="#fff"/></g>
+      <path d="M38 44 Q46 40 54 44 M66 44 Q74 40 82 44" stroke="#2a1a10" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    </g>
+  </svg>`;
+  window.CHARS = { role: k => ROLE[k](), avatar, count: AV.length, trophy: TROPHY, chibi: CHIBI };
 })();

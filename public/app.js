@@ -5,6 +5,7 @@
   const $$ = s => [...document.querySelectorAll(s)];
   const AVATARS = Array.from({ length: CHARS.count }, (_, i) => CHARS.avatar(i));
   document.querySelectorAll('[data-char]').forEach(el => el.innerHTML = CHARS.role(el.dataset.char));
+  document.querySelectorAll('[data-chibi]').forEach(el => el.innerHTML = CHARS.chibi);
   const ROLE_INFO = {
     raja:{en:'Raja',ml:'രാജാവ്',emoji:CHARS.role('raja'),points:1000},
     rani:{en:'Rani',ml:'റാണി',emoji:CHARS.role('rani'),points:800},
@@ -464,6 +465,9 @@
     if (r.correct) { title = 'Correct! · പിടിച്ചു!'; line = `${esc(police.name)} caught the Kallan ${esc(kallan.name)}! 🚔`; }
     else if (r.timedOut) { title = 'Time up! · സമയം കഴിഞ്ഞു'; line = `${esc(kallan.name)} the Kallan escaped! 🏃‍♂️💨`; }
     else { title = 'Wrong! · തെറ്റി!'; line = `${esc(police.name)} picked ${esc(guessed.name)}. The real Kallan was ${esc(kallan.name)}! 🥷`; }
+    const stage = $('#escape-stage');
+    stage.classList.toggle('hidden', r.correct);
+    if (fresh && !r.correct) { stage.classList.remove('play'); void stage.offsetWidth; stage.classList.add('play'); setTimeout(() => sfx.boom(), 2300); }
     $('#verdict').innerHTML = `<div class="mark ${r.correct?'ok':'no'}">${r.correct?'✓':'✗'}</div>
       <div><h3 class="${r.correct?'ok':'no'}">${title}</h3><p>${line}</p></div>`;
     const order = ['raja','rani','manthri','police','kallan'];
