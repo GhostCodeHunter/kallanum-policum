@@ -52,7 +52,7 @@
     <div class="logo-wrap">
       <div class="logo">
         <div class="logo-chars">
-          <span class="lc lc1">👑</span><span class="lc lc2">👸</span><span class="lc lc3">👮</span><span class="lc lc4">🥷</span><span class="lc lc5">🧙</span>
+          <span class="lc lc1" data-char="raja"></span><span class="lc lc2" data-char="rani"></span><span class="lc lc3" data-char="police"></span><span class="lc lc4" data-char="kallan"></span><span class="lc lc5" data-char="manthri"></span>
         </div>
         <div class="logo-board">
           <div class="logo-ml">കള്ളനും<br/>പോലീസും</div>
@@ -60,7 +60,7 @@
         </div>
         <div class="logo-ribbon">ചീട്ട് കളി · Chit Game</div>
       </div>
-      <p class="tagline">★ കൂട്ടുകാരുമൊത്ത് ഒരു രസികൻ കളി ★<br/><small>A fun multiplayer game of roles, mystery &amp; guessing</small></p>
+      <p class="tagline">★ <span class="ml">കൂട്ടുകാരുമൊത്തു ഒരു രസികൻ കളി</span> ★<br/><small>A fun multiplayer game of roles, mystery &amp; guessing</small></p>
     </div>
 
     <div class="card form-card pop-in">
@@ -119,11 +119,11 @@
         <h2>How to Play · കളി നിയമം</h2><span></span>
       </div>
       <div class="role-table">
-        <div class="rt"><span>👑</span><b>Raja · രാജാവ്</b><em>1000</em></div>
-        <div class="rt"><span>👸</span><b>Rani · റാണി</b><em>800</em></div>
-        <div class="rt"><span>🧙</span><b>Manthri · മന്ത്രി</b><em>700</em></div>
-        <div class="rt"><span>👮</span><b>Police · പോലീസ്</b><em>500</em></div>
-        <div class="rt"><span>🥷</span><b>Kallan · കള്ളൻ</b><em>0</em></div>
+        <div class="rt"><span data-char="raja"></span><b>Raja · രാജാവ്</b><em>1000</em></div>
+        <div class="rt"><span data-char="rani"></span><b>Rani · റാണി</b><em>800</em></div>
+        <div class="rt"><span data-char="manthri"></span><b>Manthri · മന്ത്രി</b><em>700</em></div>
+        <div class="rt"><span data-char="police"></span><b>Police · പോലീസ്</b><em>500</em></div>
+        <div class="rt"><span data-char="kallan"></span><b>Kallan · കള്ളൻ</b><em>0</em></div>
       </div>
       <ol class="rules">
         <li>5 friends join one room with a code.</li>
@@ -196,7 +196,7 @@
     <div class="round-tag" id="raja-round"></div>
     <div class="spot">
       <div class="crown-burst"></div>
-      <div class="hero-emoji bounce">👑</div>
+      <div class="hero-emoji bounce" data-char="raja"></div>
     </div>
     <h1 class="big-title gold" id="raja-title"></h1>
     <p class="sub" id="raja-sub"></p>
@@ -212,7 +212,7 @@
     </div>
     <div class="police-layout">
       <div class="police-hero">
-        <div class="hero-emoji salute">👮</div>
+        <div class="hero-emoji salute" data-char="police"></div>
         <div class="speech" id="police-speech"></div>
       </div>
       <div class="suspects-wrap">
@@ -235,7 +235,7 @@
 
   <!-- ===== FINAL ===== -->
   <section class="screen" id="s-final">
-    <div class="ribbon red">🏆 Final Scoreboard 🏆</div>
+    <div class="ribbon red">★ Final Scoreboard ★</div>
     <div class="winner" id="winner"></div>
     <div class="podium" id="podium"></div>
     <div class="btn-row">
@@ -249,10 +249,12 @@
   <div class="reactions hidden" id="reactions"></div>
 </main>
 
+<button class="sound-btn" id="btn-sound" aria-label="Sound on or off">🔊</button>
 <div class="toasts" id="toasts"></div>
 <canvas id="confetti"></canvas>
 
 <script src="/socket.io/socket.io.js"></script>
+<script src="characters.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

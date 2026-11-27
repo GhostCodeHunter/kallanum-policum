@@ -336,3 +336,53 @@ input:focus{border-color:var(--purple);box-shadow:0 0 0 5px rgba(108,59,214,.2);
 }
 .ml{font-family:'Noto Sans Malayalam','Baloo Chettan 2',sans-serif}
 .lbl small{font-weight:500;opacity:.7}
+
+/* ---------- sound toggle ---------- */
+.sound-btn{position:fixed;bottom:10px;right:12px;z-index:30;width:46px;height:46px;border-radius:50%;font-size:22px;cursor:pointer;
+  border:3px solid var(--gold);background:rgba(20,10,50,.8);transition:transform .2s var(--ease)}
+.sound-btn:hover{transform:scale(1.12) rotate(8deg)}
+.sound-btn:active{transform:scale(.9)}
+.sound-btn.off{border-color:#777;filter:grayscale(1)}
+.sound-btn:not(.off)::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--gold-l);animation:soundPulse 1.8s ease-out infinite}
+@keyframes soundPulse{from{transform:scale(.9);opacity:.8}to{transform:scale(1.4);opacity:0}}
+
+/* ---------- winning show ---------- */
+.winner{position:relative}
+.rays{position:absolute;left:50%;top:60px;width:520px;height:520px;margin:-260px 0 0 -260px;z-index:-1;pointer-events:none;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,rgba(255,216,102,.35) 0 10deg,transparent 10deg 20deg);
+  -webkit-mask:radial-gradient(circle,#000 15%,transparent 65%);mask:radial-gradient(circle,#000 15%,transparent 65%);animation:spin 14s linear infinite}
+.trophy-wrap{position:relative;display:inline-block}
+.winner .trophy{animation:trophyIn 1s var(--ease) both,heroBounce 1.4s var(--ease) 1s infinite}
+@keyframes trophyIn{0%{transform:scale(0) rotate(-720deg)}100%{transform:none}}
+.win-crown{position:absolute;top:-34px;left:50%;margin-left:-22px;font-size:44px;animation:crownDrop .8s var(--ease) 1s both}
+@keyframes crownDrop{from{transform:translateY(-200px) rotate(-40deg);opacity:0}}
+.spark{position:absolute;font-size:26px;animation:sparkle 1.6s ease-in-out infinite}
+.s1{top:0;left:-30px}.s2{top:10px;right:-34px;animation-delay:.4s}.s3{bottom:6px;left:-38px;animation-delay:.8s}.s4{bottom:0;right:-30px;animation-delay:1.2s}
+@keyframes sparkle{0%,100%{transform:scale(.4) rotate(0);opacity:.3}50%{transform:scale(1.2) rotate(180deg);opacity:1}}
+.winner .wn{animation:nameGlow 2s ease-in-out infinite,popIn .7s var(--ease) 1.2s both}
+@keyframes nameGlow{50%{text-shadow:0 0 18px rgba(255,216,102,.9),0 0 40px rgba(255,160,40,.6)}}
+.pod{position:relative}
+.pod-crown{position:absolute;top:-30px;left:50%;margin-left:-16px;font-size:32px;animation:crownDrop .7s var(--ease) 1.6s both,peek 2s ease-in-out 2.4s infinite}
+.pod.p1{animation:rise .8s var(--ease) both,winnerGlow 2s ease-in-out 1.5s infinite}
+@keyframes winnerGlow{50%{box-shadow:0 8px 0 var(--gold-d),0 0 35px 8px rgba(255,216,102,.7)}}
+.i-won .ribbon{animation:ribbonIn .7s var(--ease) both,wiggle 1s ease-in-out 1s 3}
+
+/* ---------- SVG characters ---------- */
+svg.char{display:inline-block;vertical-align:middle;overflow:visible}
+.av{padding:0;overflow:hidden;font-size:inherit}
+.av svg.char{width:100%;height:100%}
+.seat .bubble{overflow:hidden;background:#fbe6da}
+.seat .bubble svg.char{width:100%;height:100%}
+.seat.empty .bubble{background:rgba(255,255,255,.06)}
+.lc svg.char{filter:drop-shadow(0 4px 4px rgba(0,0,0,.35))}
+.logo-chars{font-size:72px;gap:0}
+.lc3{font-size:80px}
+.ss .e svg.char,.chip .e svg.char{border-radius:50%;background:#fbe6da}
+.suspect .e svg.char,.pod .e svg.char{border-radius:50%}
+.pod .e{font-size:64px}
+.mini .e{font-size:52px}
+.rt span{font-size:40px}
+.role-emoji{font-size:130px;line-height:1}
+.hero-emoji{font-size:170px;line-height:1}
+.winner .trophy{font-size:110px;line-height:1}
+@media (max-width:600px){.logo-chars{font-size:54px}.lc3{font-size:60px}.hero-emoji{font-size:130px}}

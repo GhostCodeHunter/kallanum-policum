@@ -188,7 +188,7 @@ io.on('connection', socket => {
       p = {
         id: playerId,
         name: cleanName(name),
-        avatar: Number.isInteger(avatar) ? avatar % 12 : crypto.randomInt(12),
+        avatar: Number.isInteger(avatar) ? Math.abs(avatar) % 24 : crypto.randomInt(24),
         score: 0,
         socketId: socket.id,
         connected: true,

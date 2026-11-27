@@ -3,13 +3,14 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const AVATARS = ['🧑','👩','👦','👧','🧔','👨‍🦱','👩‍🦱','🧑‍🦰','👱','👳','🧕','🧒'];
+  const AVATARS = Array.from({ length: CHARS.count }, (_, i) => CHARS.avatar(i));
+  document.querySelectorAll('[data-char]').forEach(el => el.innerHTML = CHARS.role(el.dataset.char));
   const ROLE_INFO = {
-    raja:{en:'Raja',ml:'രാജാവ്',emoji:'👑',points:1000},
-    rani:{en:'Rani',ml:'റാണി',emoji:'👸',points:800},
-    manthri:{en:'Manthri',ml:'മന്ത്രി',emoji:'🧙',points:700},
-    police:{en:'Police',ml:'പോലീസ്',emoji:'👮',points:500},
-    kallan:{en:'Kallan',ml:'കള്ളൻ',emoji:'🥷',points:0},
+    raja:{en:'Raja',ml:'രാജാവ്',emoji:CHARS.role('raja'),points:1000},
+    rani:{en:'Rani',ml:'റാണി',emoji:CHARS.role('rani'),points:800},
+    manthri:{en:'Manthri',ml:'മന്ത്രി',emoji:CHARS.role('manthri'),points:700},
+    police:{en:'Police',ml:'പോലീസ്',emoji:CHARS.role('police'),points:500},
+    kallan:{en:'Kallan',ml:'കള്ളൻ',emoji:CHARS.role('kallan'),points:0},
   };
 
   // ---------- identity (kept in this browser so a refresh rejoins) ----------
@@ -40,26 +41,147 @@
     flies.appendChild(f);
   }
 
-  // ---------- tiny sound effects (Web Audio, no files) ----------
-  let actx;
-  function beep(freq=520, dur=.08, type='triangle', vol=.08) {
+  // ---------- AUDIO ENGINE (Web Audio, all generated, no files) ----------
+  let actx, master, sfxBus, musicBus;
+  let soundOn = localStorage.getItem('kp_sound') !== 'off';
+  function ac() {
+    if (!actx) {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      master = actx.createGain(); master.gain.value = soundOn ? 1 : 0; master.connect(actx.destination);
+      sfxBus = actx.createGain(); sfxBus.gain.value = .9; sfxBus.connect(master);
+      musicBus = actx.createGain(); musicBus.gain.value = .32; musicBus.connect(master);
+    }
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function tone(freq, dur=.12, type='triangle', vol=.08, when=0, bus) {
     try {
-      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-      const o = actx.createOscillator(), g = actx.createGain();
-      o.type = type; o.frequency.value = freq;
-      g.gain.setValueAtTime(vol, actx.currentTime);
-      g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + dur);
-      o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + dur);
+      const c = ac(), t = c.currentTime + when;
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .01);
+      g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      o.connect(g).connect(bus || sfxBus); o.start(t); o.stop(t + dur + .02);
     } catch {}
   }
-  const tune = notes => notes.forEach(([f,t,d]) => setTimeout(() => beep(f, d||.15, 'triangle', .1), t));
+  const beep = (f, d, type, v) => tone(f, d, type, v);
+  function noise(dur=.1, vol=.1, when=0, hp=1000, bus) {
+    try {
+      const c = ac(), t = c.currentTime + when;
+      const buf = c.createBuffer(1, Math.ceil(c.sampleRate * dur), c.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random()*2 - 1;
+      const src = c.createBufferSource(); src.buffer = buf;
+      const f = c.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp;
+      const g = c.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      src.connect(f).connect(g).connect(bus || sfxBus); src.start(t);
+    } catch {}
+  }
+  // chenda-style drum: pitched thump + skin slap
+  function drum(when, low=true, vol=.5, bus) {
+    try {
+      const c = ac(), t = c.currentTime + when;
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(low ? 150 : 320, t); o.frequency.exponentialRampToValueAtTime(low ? 55 : 160, t + .18);
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + (low ? .35 : .15));
+      o.connect(g).connect(bus || musicBus); o.start(t); o.stop(t + .4);
+      noise(low ? .05 : .08, vol * (low ? .15 : .35), when, low ? 800 : 2500, bus || musicBus);
+    } catch {}
+  }
+  const tune = notes => notes.forEach(([f,t,d]) => tone(f, d||.15, 'triangle', .1, t/1000));
   const sfx = {
-    click: () => beep(660,.06),
-    reveal: () => tune([[523,0],[659,120],[784,240],[1047,360,.3]]),
-    win: () => tune([[523,0],[659,150],[784,300],[1047,450],[784,600],[1047,750,.4]]),
-    lose: () => tune([[400,0,.2],[300,200,.2],[200,400,.4]]),
-    siren: () => tune([[880,0,.2],[660,220,.2],[880,440,.2],[660,660,.2]]),
+    click: () => { tone(880,.05,'sine',.07); tone(1320,.04,'sine',.04,.03); },
+    join: () => tune([[659,0],[988,90,.25]]),
+    leave: () => tune([[523,0],[392,100,.2]]),
+    shuffle: () => { for (let i = 0; i < 14; i++) noise(.05, .12, i*.13, 3000); },
+    flip: () => { noise(.12,.15,0,1500); tone(300,.15,'sine',.1,.05); },
+    reveal: () => tune([[523,0],[659,120],[784,240],[1047,360,.35]]),
+    raja: () => { tune([[523,0,.2],[523,180,.1],[659,300,.2],[784,500,.5]]); drum(0); drum(.5); },
+    sneaky: () => tune([[294,0,.25],[277,250,.25],[262,500,.25],[247,750,.5]]),
+    win: () => tune([[523,0],[659,150],[784,300],[1047,450],[784,600],[1047,750,.5]]),
+    lose: () => tune([[400,0,.25],[300,250,.25],[200,500,.6]]),
+    siren: () => { for (let i = 0; i < 4; i++) { tone(880,.2,'sawtooth',.04,i*.44); tone(660,.2,'sawtooth',.04,i*.44+.22); } },
+    tick: () => tone(1400,.03,'square',.03),
+    coin: () => { tone(988,.08,'square',.05); tone(1319,.25,'square',.05,.08); },
+    fanfare: () => {
+      const n = [[523,0,.18],[523,.2,.1],[523,.32,.1],[698,.45,.5],[880,1,.18],[784,1.2,.18],[880,1.4,.7]];
+      n.forEach(([f,t,d]) => { tone(f,d+.1,'sawtooth',.05,t); tone(f*2,d,'triangle',.04,t); });
+      [0,.45,1,1.4].forEach(t => drum(t, true, .6, sfxBus));
+    },
+    boom: () => { noise(.6,.25,0,200); tone(80,.5,'sine',.3); },
   };
+
+  // ---------- background music: Kerala-folk loop (Mohanam scale + chenda + drone) ----------
+  const SCALE = [261.6, 293.7, 329.6, 392.0, 440.0, 523.3, 587.3, 659.3];
+  const MOODS = {
+    calm:    { bpm: 84,  melody: true,  drums: 'soft', drone: true },
+    tense:   { bpm: 132, melody: false, drums: 'fast', drone: true },
+    party:   { bpm: 120, melody: true,  drums: 'party', drone: false },
+  };
+  let mood = null, step = 0, nextT = 0, schedTimer = null, droneNodes = [];
+  // phrase picked from scale degrees (-1 = rest), loosely like a folk tune
+  const PHRASES = [
+    [0,-1,2,3,4,-1,3,2, 3,-1,2,0,1,-1,0,-1],
+    [4,-1,5,4,3,-1,2,3, 4,-1,3,2,0,-1,-1,-1],
+    [5,-1,4,3,4,-1,5,7, 6,-1,5,4,3,-1,2,-1],
+    [2,3,4,-1,3,2,0,-1, 1,-1,2,1,0,-1,-1,-1],
+  ];
+  function flute(freq, t, dur) {
+    const c = actx, o = c.createOscillator(), v = c.createOscillator(), vg = c.createGain(), g = c.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    v.frequency.value = 5.5; vg.gain.value = freq * .012; v.connect(vg).connect(o.frequency); // vibrato
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.18, t + .06);
+    g.gain.setValueAtTime(.16, t + dur * .7); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(musicBus); o.start(t); v.start(t); o.stop(t + dur + .05); v.stop(t + dur + .05);
+  }
+  function startDrone() {
+    stopDrone();
+    [130.8, 196.0, 261.6].forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain(), lfo = actx.createOscillator(), lg = actx.createGain();
+      o.type = 'triangle'; o.frequency.value = f;
+      g.gain.value = .05 - i * .012;
+      lfo.frequency.value = .15 + i * .07; lg.gain.value = .02; lfo.connect(lg).connect(g.gain);
+      o.connect(g).connect(musicBus); o.start(); lfo.start();
+      droneNodes.push(o, lfo);
+    });
+  }
+  function stopDrone() { droneNodes.forEach(n => { try { n.stop(); } catch {} }); droneNodes = []; }
+  function schedule() {
+    const m = MOODS[mood]; if (!m || !actx) return;
+    const s16 = 60 / m.bpm / 4;
+    while (nextT < actx.currentTime + .25) {
+      const when = nextT - actx.currentTime, i = step % 16;
+      if (m.drums === 'soft') { if (i === 0 || i === 10) drum(when, true, .35); if (i === 4 || i === 12) drum(when, false, .18); if (i % 2 === 1) noise(.02,.03,when,6000,musicBus); }
+      if (m.drums === 'fast') { if (i % 4 === 0) drum(when, true, .45); drum(when, false, i % 2 ? .1 : .2); }
+      if (m.drums === 'party') { if (i % 4 === 0) drum(when, true, .5); if (i % 4 === 2) drum(when, false, .3); noise(.02,.04,when,7000,musicBus); }
+      if (m.melody) {
+        const ph = PHRASES[Math.floor(step / 16) % PHRASES.length], d = ph[i];
+        if (d >= 0) flute(SCALE[d] * (mood === 'party' ? 2 : 1), nextT, s16 * 1.8);
+      }
+      if (mood === 'tense' && i === 0) tone(SCALE[0] / 2, s16 * 8, 'sawtooth', .03, when, musicBus);
+      nextT += s16; step++;
+    }
+  }
+  function setMood(m) {
+    if (m === mood) return;
+    mood = m;
+    if (!actx) return; // starts after first tap
+    step = 0; nextT = actx.currentTime + .05;
+    MOODS[m] && MOODS[m].drone ? startDrone() : stopDrone();
+    clearInterval(schedTimer); schedTimer = setInterval(schedule, 80);
+  }
+  // browsers block audio until a tap: start music on first interaction
+  const unlock = () => { ac(); const m = mood || 'calm'; mood = null; setMood(m); removeEventListener('pointerdown', unlock); };
+  addEventListener('pointerdown', unlock);
+  setMood('calm');
+
+  function setSound(on) {
+    soundOn = on; localStorage.setItem('kp_sound', on ? 'on' : 'off');
+    const b = document.getElementById('btn-sound');
+    b.textContent = on ? '🔊' : '🔇'; b.classList.toggle('off', !on);
+    if (actx) master.gain.setTargetAtTime(on ? 1 : 0, actx.currentTime, .05);
+  }
+  document.getElementById('btn-sound').onclick = e => { e.stopPropagation(); setSound(!soundOn); };
+  setSound(soundOn);
 
   // ---------- button ripple + click sound ----------
   document.addEventListener('pointerdown', e => {
@@ -108,7 +230,7 @@
   // avatars
   AVATARS.forEach((a, i) => {
     const b = document.createElement('button');
-    b.className = 'av' + (i === avatar ? ' sel' : ''); b.textContent = a; b.type = 'button';
+    b.className = 'av' + (i === avatar ? ' sel' : ''); b.innerHTML = a; b.type = 'button';
     b.setAttribute('aria-label', 'Avatar ' + (i+1));
     b.onclick = () => { avatar = i; localStorage.setItem('kp_av', i); $$('.av').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); };
     $('#avatars').appendChild(b);
@@ -189,7 +311,8 @@
   // reveal + actions
   $('#flip').onclick = () => {
     if (!myRole || flipped) return;
-    flipped = true; $('#flip').classList.add('open'); sfx.reveal();
+    flipped = true; $('#flip').classList.add('open'); sfx.flip();
+    setTimeout(() => (myRole.key === 'kallan' ? sfx.sneaky() : myRole.key === 'raja' ? sfx.raja() : sfx.reveal()), 400);
     $('#btn-gotit').disabled = false;
     if (myRole.key === 'raja') setTimeout(() => confetti(80), 600);
   };
@@ -216,8 +339,11 @@
   socket.on('state', s => {
     const phaseChanged = !state || s.phase !== state.phase || s.round !== lastRound;
     if (s.phase === 'reveal' && phaseChanged) { flipped = false; $('#flip').classList.remove('open'); }
+    const prevCount = state ? state.players.length : s.players.length;
     state = s;
     lastRound = s.round;
+    if (s.players.length > prevCount) sfx.join(); else if (s.players.length < prevCount) sfx.leave();
+    setMood(s.phase === 'police' ? 'tense' : s.phase === 'final' ? 'party' : 'calm');
     $$('.room-code-txt').forEach(el => el.textContent = s.code);
     renderStrip();
     $('#reactions').classList.remove('hidden');
@@ -225,9 +351,9 @@
 
     switch (s.phase) {
       case 'lobby': renderLobby(); show('s-lobby'); break;
-      case 'assigning': show('s-assign'); break;
+      case 'assigning': show('s-assign'); if (phaseChanged) sfx.shuffle(); break;
       case 'reveal': renderReveal(phaseChanged); show('s-reveal'); break;
-      case 'raja': renderRaja(); show('s-raja'); if (phaseChanged) confetti(50); break;
+      case 'raja': renderRaja(); show('s-raja'); if (phaseChanged) { confetti(50); sfx.raja(); } break;
       case 'police': renderPolice(); show('s-police'); if (phaseChanged) sfx.siren(); break;
       case 'result': renderResult(phaseChanged); show('s-result'); break;
       case 'final': renderResult(false); renderFinal(phaseChanged); show('s-final'); break;
@@ -268,7 +394,7 @@
   function renderReveal(fresh) {
     $('#reveal-round').textContent = roundTxt();
     if (myRole) {
-      $('#my-emoji').textContent = myRole.emoji;
+      $('#my-emoji').innerHTML = ROLE_INFO[myRole.key].emoji;
       $('#my-role').textContent = myRole.en;
       $('#my-role-ml').textContent = myRole.ml;
       $('#my-pts').textContent = myRole.points + ' pts';
@@ -310,7 +436,7 @@
     $('#suspects').innerHTML = state.players.map(p => {
       const known = p.role === 'raja' || p.role === 'police';
       const can = iAmPolice && !known;
-      const tag = known ? ROLE_INFO[p.role].emoji + ' ' + ROLE_INFO[p.role].en : (can ? 'കള്ളൻ? 🥷' : (p.id===playerId ? 'You' : '?'));
+      const tag = known ? ROLE_INFO[p.role].emoji + ' ' + ROLE_INFO[p.role].en : (can ? 'കള്ളൻ? ' + ROLE_INFO.kallan.emoji : (p.id===playerId ? 'You' : '?'));
       return `<button class="suspect ${can?'can':'locked'} ${known?'known':''}" data-id="${p.id}" ${can?'':'disabled'}>
         <span class="e">${av(p)}</span>${esc(p.name)}${p.id===playerId?' (You)':''}<span class="tag">${tag}</span></button>`;
     }).join('');
@@ -324,7 +450,7 @@
       const left = Math.max(0, Math.round((state.policeDeadline - Date.now())/1000));
       const t = $('#timer'); t.textContent = `⏱ 00:${String(left).padStart(2,'0')}`;
       t.classList.toggle('low', left <= 10);
-      if (left <= 5 && left > 0) beep(900,.05,'square',.04);
+      if (left <= 10 && left > 0) sfx.tick();
     };
     tick(); timerInt = setInterval(tick, 1000);
   }
@@ -356,7 +482,7 @@
       if (myRole && ((myRole.key === 'police' && r.correct) || (myRole.key === 'kallan' && !r.correct))) { sfx.win(); confetti(160); }
       else if (myRole && ((myRole.key === 'police' && !r.correct) || (myRole.key === 'kallan' && r.correct))) sfx.lose();
       else { sfx.reveal(); if (r.correct) confetti(60); }
-      if (myPts) toast(`+${myPts} points!`, 'ok');
+      if (myPts) { toast(`+${myPts} points!`, 'ok'); setTimeout(sfx.coin, 900); }
     }
   }
 
@@ -364,7 +490,7 @@
     const sorted = [...state.players].sort((a,b) => b.score - a.score);
     const top = sorted[0];
     const tied = sorted.filter(p => p.score === top.score);
-    $('#winner').innerHTML = `<div class="trophy">🏆</div>
+    $('#winner').innerHTML = `<div class="rays"></div><div class="trophy-wrap"><span class="win-crown">👑</span><div class="trophy">${CHARS.trophy}</div><span class="spark s1">✨</span><span class="spark s2">⭐</span><span class="spark s3">✨</span><span class="spark s4">🌟</span></div>
       <div class="wn">${tied.map(p => esc(p.name)).join(' & ')}</div>
       <div class="sub">${tied.length>1?'Joint winners! · വിജയികൾ':'Winner! · വിജയി'} — ${top.score} pts</div>`;
     const ord = ['1st','2nd','3rd','4th','5th'];
@@ -373,10 +499,21 @@
     $('#podium').innerHTML = vis.map((p, i) => {
       const rank = sorted.indexOf(p);
       return `<div class="pod p${rank+1}" style="animation-delay:${[.3,.6,.15,0,0][i]}s">
-        <div class="e">${av(p)}</div><div class="n">${esc(p.name)}</div><div class="s">${p.score} pts</div><div class="rk">${ord[rank]}</div></div>`;
+        ${rank===0?'<div class="pod-crown">👑</div>':''}<div class="e">${av(p)}</div><div class="n">${esc(p.name)}</div><div class="s" data-to="${p.score}">0 pts</div><div class="rk">${ord[rank]}</div></div>`;
     }).join('');
     $('#btn-again').classList.toggle('hidden', !isHost());
-    if (fresh) { setTimeout(() => { sfx.win(); confetti(250); }, 500); }
+    // count-up scores
+    $$('.pod .s').forEach(el => {
+      const to = +el.dataset.to, t0 = performance.now(), dur = 1400;
+      const step = now => { const k = Math.min(1, (now - t0) / dur); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))) + ' pts'; if (k < 1) requestAnimationFrame(step); };
+      setTimeout(() => requestAnimationFrame(step), 600);
+    });
+    $('#s-final').classList.toggle('i-won', tied.some(p => p.id === playerId));
+    if (fresh) {
+      setTimeout(() => { sfx.fanfare(); confetti(250); }, 400);
+      fireworks(9);
+      if (tied.some(p => p.id === playerId)) setTimeout(() => toast('🎉 നിങ്ങൾ ജയിച്ചു! You won! 🎉', 'ok'), 1200);
+    }
   }
 
   // ---------- confetti ----------
@@ -392,10 +529,31 @@
     });
     if (!raf) loop();
   }
+  // fireworks: rockets burst into rings of sparks
+  function fireworks(count = 6) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const cols = ['#ffd866','#ff6b5e','#7df29a','#9b6bff','#5aa0ff','#ffffff','#f4b62a'];
+    for (let k = 0; k < count; k++) setTimeout(() => {
+      const x = innerWidth * (.15 + Math.random() * .7), y = innerHeight * (.12 + Math.random() * .35);
+      const c = cols[k % cols.length], n = 46;
+      sfx.boom();
+      for (let i = 0; i < n; i++) {
+        const a = i / n * Math.PI * 2, sp = 4 + Math.random() * 3;
+        parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, s: 4, c, r: 0, vr: 0, life: 0, spark: true });
+      }
+      if (!raf) loop();
+    }, 300 + k * 550);
+  }
   function loop() {
     cx.clearRect(0,0,cv.width,cv.height);
     parts.forEach(p => {
-      p.vy += .35; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life++;
+      p.vy += p.spark ? .08 : .35; p.vx *= p.spark ? .97 : .99; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life++;
+      if (p.spark) {
+        cx.globalAlpha = Math.max(0, 1 - p.life / 70); cx.fillStyle = p.c;
+        cx.beginPath(); cx.arc(p.x, p.y, 2.6, 0, 7); cx.fill(); cx.globalAlpha = 1;
+        if (p.life > 70) p.life = 999;
+        return;
+      }
       cx.save(); cx.translate(p.x,p.y); cx.rotate(p.r); cx.fillStyle = p.c;
       cx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2); cx.restore();
     });
