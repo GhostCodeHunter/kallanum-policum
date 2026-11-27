@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>കള്ളനും പോലീസും · Kallanum Policum</title>
+<meta name="theme-color" content="#1a1140" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👮</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Chettan+2:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ===== Kerala night scene background ===== -->
+<div class="scene" aria-hidden="true">
+  <div class="moon"></div>
+  <div class="stars"></div>
+  <div class="fireflies"></div>
+  <svg class="hills" viewBox="0 0 1440 320" preserveAspectRatio="none">
+    <path d="M0,220 C180,160 320,250 520,200 C720,150 860,240 1060,190 C1240,150 1340,210 1440,190 L1440,320 L0,320Z" fill="#123d2a"/>
+    <path d="M0,260 C220,220 380,290 620,250 C860,210 1020,290 1240,250 C1340,235 1400,250 1440,245 L1440,320 L0,320Z" fill="#0c2c1e"/>
+  </svg>
+  <svg class="palm palm-l" viewBox="0 0 200 400"><use href="#palm"/></svg>
+  <svg class="palm palm-r" viewBox="0 0 200 400"><use href="#palm"/></svg>
+  <svg class="palm palm-r2" viewBox="0 0 200 400"><use href="#palm"/></svg>
+  <div class="backwater"></div>
+</div>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <g id="palm">
+      <path d="M100 400 C96 300 92 220 104 120" stroke="#08201a" stroke-width="12" fill="none" stroke-linecap="round"/>
+      <g fill="#0a2a1f">
+        <path d="M104 120 C60 90 30 100 0 130 C40 105 70 110 104 124Z"/>
+        <path d="M104 120 C70 70 40 60 10 70 C50 75 80 95 104 124Z"/>
+        <path d="M104 120 C100 70 110 40 130 20 C118 55 112 90 106 124Z"/>
+        <path d="M104 120 C140 80 170 75 200 90 C165 92 135 105 106 124Z"/>
+        <path d="M104 120 C150 110 180 125 196 150 C165 130 135 125 106 124Z"/>
+        <path d="M104 120 C80 125 60 150 50 180 C70 150 88 135 106 124Z"/>
+      </g>
+      <circle cx="100" cy="128" r="7" fill="#3b2a12"/><circle cx="111" cy="130" r="6" fill="#3b2a12"/>
+    </g>
+  </defs>
+</svg>
+
+<main id="app">
+
+  <!-- ===== HOME ===== -->
+  <section class="screen active" id="s-home">
+    <div class="logo-wrap">
+      <div class="logo">
+        <div class="logo-chars">
+          <span class="lc lc1">👑</span><span class="lc lc2">👸</span><span class="lc lc3">👮</span><span class="lc lc4">🥷</span><span class="lc lc5">🧙</span>
+        </div>
+        <div class="logo-board">
+          <div class="logo-ml">കള്ളനും<br/>പോലീസും</div>
+          <div class="logo-en">KALLANUM POLICUM</div>
+        </div>
+        <div class="logo-ribbon">ചീട്ട് കളി · Chit Game</div>
+      </div>
+      <p class="tagline">★ കൂട്ടുകാരുമൊത്ത് ഒരു രസികൻ കളി ★<br/><small>A fun multiplayer game of roles, mystery &amp; guessing</small></p>
+    </div>
+
+    <div class="card form-card pop-in">
+      <label class="lbl" for="in-name">നിങ്ങളുടെ പേര് · Your name</label>
+      <input id="in-name" maxlength="16" placeholder="e.g. Sreedas" autocomplete="nickname" />
+      <div class="lbl">Avatar</div>
+      <div class="avatars" id="avatars"></div>
+      <div class="btn-row">
+        <button class="btn btn-gold" data-go="create"><span>＋</span> Create Room</button>
+        <button class="btn btn-purple" data-go="join"><span>👥</span> Join Room</button>
+      </div>
+    </div>
+    <div class="links">
+      <button class="link" data-go="how">ⓘ How to Play · കളി നിയമം</button>
+    </div>
+  </section>
+
+  <!-- ===== CREATE ===== -->
+  <section class="screen" id="s-create">
+    <div class="card panel kasavu">
+      <div class="panel-head">
+        <button class="icon-btn" data-go="home" aria-label="Back">←</button>
+        <h2>Create Room</h2><span class="dice">🎲</span>
+      </div>
+      <label class="lbl" for="in-room">Room Name</label>
+      <input id="in-room" maxlength="16" value="Fun Squad" />
+      <div class="lbl">Rounds · റൗണ്ടുകൾ</div>
+      <div class="stepper">
+        <button class="round-btn" id="r-minus" aria-label="Fewer rounds">−</button>
+        <span id="r-val">5</span>
+        <button class="round-btn" id="r-plus" aria-label="More rounds">+</button>
+      </div>
+      <p class="hint">Players: <b>5</b> (Raja, Rani, Manthri, Police, Kallan)</p>
+      <button class="btn btn-green wide" id="btn-create">Create Room ➜</button>
+    </div>
+  </section>
+
+  <!-- ===== JOIN ===== -->
+  <section class="screen" id="s-join">
+    <div class="card panel kasavu">
+      <div class="panel-head">
+        <button class="icon-btn" data-go="home" aria-label="Back">←</button>
+        <h2>Join a Room</h2><span class="dice">🃏</span>
+      </div>
+      <label class="lbl" for="in-code">Room Code</label>
+      <input id="in-code" class="code-input" maxlength="5" placeholder="AB123" autocapitalize="characters" />
+      <button class="btn btn-purple wide" id="btn-join">Join Game ➜</button>
+    </div>
+  </section>
+
+  <!-- ===== HOW TO PLAY ===== -->
+  <section class="screen" id="s-how">
+    <div class="card panel kasavu how">
+      <div class="panel-head">
+        <button class="icon-btn" data-go="home" aria-label="Back">←</button>
+        <h2>How to Play · കളി നിയമം</h2><span></span>
+      </div>
+      <div class="role-table">
+        <div class="rt"><span>👑</span><b>Raja · രാജാവ്</b><em>1000</em></div>
+        <div class="rt"><span>👸</span><b>Rani · റാണി</b><em>800</em></div>
+        <div class="rt"><span>🧙</span><b>Manthri · മന്ത്രി</b><em>700</em></div>
+        <div class="rt"><span>👮</span><b>Police · പോലീസ്</b><em>500</em></div>
+        <div class="rt"><span>🥷</span><b>Kallan · കള്ളൻ</b><em>0</em></div>
+      </div>
+      <ol class="rules">
+        <li>5 friends join one room with a code.</li>
+        <li>The game shuffles 5 chits and gives each player a <b>secret role</b>.</li>
+        <li>Only you can see your chit.</li>
+        <li>Raja reveals first and calls the Police: <i>"പോലീസേ, കള്ളനെ പിടിക്കൂ!"</i></li>
+        <li>Police gets one guess (45 sec) to find the Kallan.</li>
+        <li><b>Correct:</b> Police +500, Kallan 0. <b>Wrong:</b> Kallan +500, Police 0.</li>
+        <li>Raja, Rani &amp; Manthri always get their points. Top total wins! 🏆</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===== LOBBY ===== -->
+  <section class="screen" id="s-lobby">
+    <div class="topbar">
+      <button class="icon-btn" id="btn-leave" aria-label="Leave room">⌂</button>
+      <div class="tb-title">Room: <b class="room-code-txt"></b></div>
+      <span class="live">● Live</span>
+    </div>
+    <h1 class="big-title">Waiting for Players…</h1>
+    <p class="sub" id="lobby-sub">5 players needed</p>
+    <div class="seats" id="seats"></div>
+    <div class="share">
+      <span>👥 Share this room code:</span>
+      <b class="code-pill room-code-txt"></b>
+      <button class="icon-btn sm" id="btn-copy" aria-label="Copy code">⧉</button>
+      <button class="icon-btn sm" id="btn-share" aria-label="Share link">↗</button>
+    </div>
+    <p class="hint center">Roles are dealt automatically when the 5th player joins.</p>
+  </section>
+
+  <!-- ===== ASSIGNING ===== -->
+  <section class="screen" id="s-assign">
+    <h1 class="big-title gold">ചീട്ട് കുലുക്കുന്നു…</h1>
+    <p class="sub">Roles are being assigned. Please wait…</p>
+    <div class="shuffle-ring">
+      <div class="chit c1">?</div><div class="chit c2">?</div><div class="chit c3">?</div><div class="chit c4">?</div><div class="chit c5">?</div>
+    </div>
+    <div class="glow-ring"></div>
+  </section>
+
+  <!-- ===== REVEAL MY ROLE ===== -->
+  <section class="screen" id="s-reveal">
+    <div class="round-tag" id="reveal-round"></div>
+    <h1 class="big-title">Your Role is…</h1>
+    <div class="flip-wrap">
+      <div class="flip" id="flip">
+        <div class="face front">
+          <div class="chit-pattern"></div>
+          <div class="tap">👆 Tap to Reveal<br/><small>തുറന്ന് നോക്കൂ</small></div>
+        </div>
+        <div class="face back" id="role-face">
+          <div class="role-emoji" id="my-emoji"></div>
+          <div class="role-name" id="my-role"></div>
+          <div class="role-ml" id="my-role-ml"></div>
+          <div class="role-pts" id="my-pts"></div>
+        </div>
+      </div>
+      <div class="secret-note">🙈 Only you can see your role</div>
+    </div>
+    <button class="btn btn-green" id="btn-gotit" disabled>Got it! ✓</button>
+    <div class="ready-list" id="ready-list"></div>
+    <button class="btn btn-gold hidden" id="btn-start">▶ Start Round</button>
+    <p class="hint center" id="reveal-wait"></p>
+  </section>
+
+  <!-- ===== RAJA ===== -->
+  <section class="screen" id="s-raja">
+    <div class="round-tag" id="raja-round"></div>
+    <div class="spot">
+      <div class="crown-burst"></div>
+      <div class="hero-emoji bounce">👑</div>
+    </div>
+    <h1 class="big-title gold" id="raja-title"></h1>
+    <p class="sub" id="raja-sub"></p>
+    <button class="btn btn-gold pulse hidden" id="btn-call">📣 പോലീസേ, കള്ളനെ പിടിക്കൂ!<br/><small>Call the Police</small></button>
+    <p class="hint center" id="raja-wait"></p>
+  </section>
+
+  <!-- ===== POLICE ===== -->
+  <section class="screen" id="s-police">
+    <div class="topbar">
+      <div class="tb-title" id="police-round"></div>
+      <div class="timer" id="timer">⏱ 00:45</div>
+    </div>
+    <div class="police-layout">
+      <div class="police-hero">
+        <div class="hero-emoji salute">👮</div>
+        <div class="speech" id="police-speech"></div>
+      </div>
+      <div class="suspects-wrap">
+        <div class="turn-banner"><b>Police's Turn</b><small id="police-q">Who is the Kallan? · കള്ളൻ ആര്?</small></div>
+        <div class="suspects" id="suspects"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== RESULT ===== -->
+  <section class="screen" id="s-result">
+    <div class="ribbon">Round Result</div>
+    <div class="card result-card">
+      <div class="verdict" id="verdict"></div>
+      <div class="reveal-all" id="reveal-all"></div>
+    </div>
+    <button class="btn btn-gold hidden" id="btn-next">Next Round ➜</button>
+    <p class="hint center" id="result-wait"></p>
+  </section>
+
+  <!-- ===== FINAL ===== -->
+  <section class="screen" id="s-final">
+    <div class="ribbon red">🏆 Final Scoreboard 🏆</div>
+    <div class="winner" id="winner"></div>
+    <div class="podium" id="podium"></div>
+    <div class="btn-row">
+      <button class="btn btn-purple hidden" id="btn-again">↻ Play Again</button>
+      <button class="btn btn-green" id="btn-home">⌂ Back to Home</button>
+    </div>
+  </section>
+
+  <!-- ===== Shared: score strip + emoji reactions ===== -->
+  <aside class="scorestrip hidden" id="scorestrip"></aside>
+  <div class="reactions hidden" id="reactions"></div>
+</main>
+
+<div class="toasts" id="toasts"></div>
+<canvas id="confetti"></canvas>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
