@@ -23,6 +23,7 @@
   let avatar = parseInt(localStorage.getItem('kp_av') || '0', 10) || 0;
 
   const socket = io();
+  let tauntsLeft = 3;
   let state = null, myRole = null, flipped = false, lastPhase = null, lastRound = 0, timerInt = null, prevScores = {};
 
   // ---------- background: stars + fireflies ----------
@@ -203,6 +204,7 @@
     const prev = document.getElementById(current);
     prev.classList.remove('active');
     current = id;
+    if (typeof petVisible === 'function') petVisible(id);
     const next = document.getElementById(id);
     next.classList.remove('active'); void next.offsetWidth; next.classList.add('active');
     window.scrollTo({top:0, behavior:'smooth'});
@@ -277,6 +279,18 @@
   });
   socket.on('your_role', role => {
     myRole = role;
+  });
+  socket.on('taunted', ({ line }) => {
+    const el = document.createElement('div'); el.className = 'taunt-float';
+    el.innerHTML = '<span class="tm"></span><span class="tx"></span>';
+    el.querySelector('.tm').innerHTML = CHARS.chibi; el.querySelector('.tx').textContent = line;
+    el.style.left = (8 + Math.random() * 60) + 'vw';
+    document.body.appendChild(el); setTimeout(() => el.remove(), 3200);
+    tone(520, .08, 'square', .04); tone(390, .12, 'square', .04, .09);
+  });
+  socket.on('blamed', ({ targetId }) => {
+    document.querySelectorAll(`.suspect[data-pid="${targetId}"]`).forEach(r => { r.classList.remove('blame-hit'); void r.offsetWidth; r.classList.add('blame-hit'); });
+    tone(700, .06, 'triangle', .06);
   });
   socket.on('emoji', ({ from, emoji }) => {
     const p = state && state.players.find(x => x.id === from);
@@ -429,6 +443,77 @@
     updateVoiceUI();
   };
 
+
+  // ---------- INTERACTIVE KALLAN (tap to chase, 5 taps = caught) ----------
+  const pet = $('#pet'), petBody = pet.querySelector('.pet-body'), bubble = $('#pet-bubble');
+  const LINES_RUN = ['ഞാനല്ല കള്ളൻ! 😇', 'എന്നെ പിടിക്കാൻ പറ്റില്ല!', 'അയ്യോ! പോലീസ്! 🏃', 'ഇത് എന്റെ സ്വന്തം ചാക്കാ!', 'ഒന്ന് വിട് ചേട്ടാ!', 'Catch me if you can! 😜', 'ശ്ശ്... ആരോടും പറയല്ലേ 🤫'];
+  const LINES_IDLE = ['ഹി ഹി... 😏', 'ആരെങ്കിലും കണ്ടോ? 👀', 'ഇന്ന് നല്ല ദിവസം 💰', 'ടക് ടക്... 🥷'];
+  let petX = 20, hits = 0, petBusy = false, wanderT;
+  const petW = () => pet.offsetWidth || 80;
+  function say(txt, ms = 1600) {
+    bubble.textContent = txt; bubble.classList.remove('show'); void bubble.offsetWidth; bubble.classList.add('show');
+    clearTimeout(say.t); say.t = setTimeout(() => bubble.classList.remove('show'), ms);
+  }
+  function moveTo(x, run) {
+    const max = innerWidth - petW() - 8; x = Math.max(8, Math.min(max, x));
+    pet.classList.toggle('face-left', x < petX);
+    pet.classList.add(run ? 'running' : 'walking');
+    pet.style.transitionDuration = (Math.abs(x - petX) / (run ? 700 : 90)).toFixed(2) + 's';
+    pet.style.left = x + 'px'; petX = x;
+    clearTimeout(moveTo.t);
+    moveTo.t = setTimeout(() => pet.classList.remove('walking', 'running'), parseFloat(pet.style.transitionDuration) * 1000);
+  }
+  function wander() {
+    clearTimeout(wanderT);
+    wanderT = setTimeout(() => {
+      if (!petBusy) { moveTo(Math.random() * innerWidth, false); if (Math.random() < .35) setTimeout(() => say(LINES_IDLE[Math.floor(Math.random()*LINES_IDLE.length)]), 800); }
+      wander();
+    }, 5000 + Math.random() * 6000);
+  }
+  function hitsUI() { $('#pet-hits').innerHTML = hits ? '<b>' + '★'.repeat(hits) + '</b>' + '☆'.repeat(5 - hits) : ''; }
+  function tapPet() {
+    if (petBusy) return;
+    hits++; hitsUI();
+    if (hits < 5) {
+      petBusy = true;
+      pet.classList.add('hit'); sfx.click(); tone(300 + hits * 80, .12, 'square', .05);
+      say(LINES_RUN[Math.floor(Math.random() * LINES_RUN.length)]);
+      setTimeout(() => {
+        pet.classList.remove('hit'); pet.classList.add('poofing'); noise(.25, .12, 0, 1200);
+        setTimeout(() => {
+          pet.style.transitionDuration = '0s';
+          let nx; do { nx = Math.random() * (innerWidth - petW()); } while (Math.abs(nx - petX) < innerWidth * .25 && innerWidth > 500);
+          pet.style.left = nx + 'px'; petX = nx;
+          pet.classList.remove('poofing'); pet.classList.add('appear');
+          setTimeout(() => { pet.classList.remove('appear'); petBusy = false; }, 450);
+        }, 380);
+      }, 420);
+    } else {
+      petBusy = true; pet.classList.add('caught'); sfx.siren(); setTimeout(sfx.win, 900);
+      say('അയ്യോ! പിടിച്ചു! 🚔 You caught the Kallan!', 3000);
+      const r = pet.getBoundingClientRect();
+      confetti(120);
+      setTimeout(() => { pet.classList.remove('caught'); hits = 0; hitsUI(); petBusy = false; say('ഞാൻ വീണ്ടും വരും! 😈', 1800); moveTo(Math.random() * innerWidth, true); }, 3600);
+    }
+  }
+  pet.addEventListener('click', tapPet);
+  pet.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tapPet(); } });
+  // scared when the pointer gets close; eyes always follow the pointer
+  addEventListener('pointermove', e => {
+    const r = pet.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height * .35;
+    const dx = e.clientX - cx, dy = e.clientY - cy, d = Math.hypot(dx, dy) || 1;
+    const eyes = pet.querySelector('.chibi-eyes');
+    if (eyes) eyes.style.transform = `translate(${(dx / d * 3.5 * (pet.classList.contains('face-left') ? -1 : 1)).toFixed(1)}px,${(dy / d * 2.5).toFixed(1)}px)`;
+    pet.classList.toggle('scared', d < 120 && !petBusy);
+  });
+  // show the pet only on calm screens (never during the Police guess)
+  function petVisible(screen) {
+    const on = ['s-home', 's-lobby', 's-assign', 's-reveal', 's-how', 's-create', 's-join'].includes(screen);
+    pet.classList.toggle('away', !on);
+  }
+  pet.style.left = petX + 'px';
+  wander(); setTimeout(() => say('ഹലോ! എന്നെ പിടിക്കാമോ? 😜 Tap me!', 2600), 1800);
+
   // ---------- render ----------
   const me = () => state && state.players.find(p => p.id === playerId);
   const isHost = () => state && state.hostId === playerId;
@@ -439,6 +524,7 @@
   socket.on('state', s => {
     const phaseChanged = !state || s.phase !== state.phase || s.round !== lastRound;
     if (s.phase === 'reveal' && phaseChanged) { flipped = false; $('#flip').classList.remove('open'); }
+    if (s.phase === 'police' && phaseChanged) { tauntsLeft = 3; const tb = $('#taunts'); tb.classList.remove('spent'); const l = tb.querySelector('.tl'); if (l) l.textContent = '🥷 Secret taunt (3 left):'; }
     const prevCount = state ? state.players.length : s.players.length;
     state = s;
     lastRound = s.round;
@@ -534,18 +620,40 @@
       ? 'നിങ്ങളാണ് പോലീസ്! കള്ളനെ കണ്ടുപിടിക്കൂ!'
       : `${police ? police.name : ''} is the Police. Thinking…`;
     $('#police-q').textContent = iAmPolice ? 'Tap the one you think is the Kallan · കള്ളൻ ആര്?' : 'Who is the Kallan? · കള്ളൻ ആര്?';
+    const myRoleKey = myRole && myRole.key;
+    const canBlame = !iAmPolice && myRoleKey !== 'raja';
+    const bc = state.blameCounts || {};
     $('#suspects').innerHTML = state.players.map(p => {
       const known = p.role === 'raja' || p.role === 'police';
       const can = iAmPolice && !known;
       const tag = known ? ROLE_INFO[p.role].emoji + ' ' + ROLE_INFO[p.role].en : (can ? 'കള്ളൻ? ' + ROLE_INFO.kallan.emoji : (p.id===playerId ? 'You' : '?'));
-      return `<button class="suspect ${can?'can':'locked'} ${known?'known':''}" data-id="${p.id}" ${can?'':'disabled'}>
-        <span class="e">${av(p)}</span>${esc(p.name)}${p.id===playerId?' (You)':''}<span class="tag">${tag}</span></button>`;
+      const count = bc[p.id] ? `<span class="blames" title="Secret blames">👉 ${bc[p.id]}</span>` : '';
+      const blameBtn = (canBlame && !known && p.id !== playerId) ? `<button class="blame-btn" data-id="${p.id}" aria-label="Blame ${esc(p.name)}">👉 Blame</button>` : `<span class="tag">${tag}</span>`;
+      if (can) return `<button class="suspect can" data-id="${p.id}" data-pid="${p.id}"><span class="e">${av(p)}</span>${esc(p.name)}${count}<span class="tag">${tag}</span></button>`;
+      return `<div class="suspect locked ${known?'known':''}" data-pid="${p.id}"><span class="e">${av(p)}</span>${esc(p.name)}${p.id===playerId?' (You)':''}${count}${blameBtn}</div>`;
     }).join('');
     $$('.suspect.can').forEach(b => b.onclick = () => {
       b.classList.add('picked');
       $$('.suspect.can').forEach(x => { x.disabled = true; x.classList.remove('can'); });
       setTimeout(() => socket.emit('police_guess', { targetId: b.dataset.id }), 450);
     });
+    $$('.blame-btn').forEach(b => b.onclick = () => { socket.emit('blame', { targetId: b.dataset.id }); sfx.click(); });
+    // taunt chips for everyone except the Police
+    const tb = $('#taunts');
+    tb.classList.toggle('hidden', iAmPolice);
+    if (!iAmPolice && !tb.dataset.built) {
+      tb.dataset.built = 1;
+      ['ഞാനല്ല! 😇','ഉറങ്ങുവാണോ? 😴','ആലോചിച്ചോ 🤔','കണ്ണ് തുറക്ക്! 👀','Tick tock ⏰','ഹി ഹി 😏'].forEach((t, i) => {
+        const c = document.createElement('button'); c.className = 'taunt-chip'; c.textContent = t; c.type = 'button';
+        c.onclick = () => {
+          if (tauntsLeft <= 0) return;
+          tauntsLeft--; socket.emit('taunt', { i });
+          tb.querySelector('.tl').textContent = `🥷 Secret taunt (${tauntsLeft} left):`;
+          if (!tauntsLeft) tb.classList.add('spent');
+        };
+        tb.appendChild(c);
+      });
+    }
     // countdown
     const tick = () => {
       const left = Math.max(0, Math.round((state.policeDeadline - Date.now())/1000));
@@ -566,8 +674,13 @@
     else if (r.timedOut) { title = 'Time up! · സമയം കഴിഞ്ഞു'; line = `${esc(kallan.name)} the Kallan escaped! 🏃‍♂️💨`; }
     else { title = 'Wrong! · തെറ്റി!'; line = `${esc(police.name)} picked ${esc(guessed.name)}. The real Kallan was ${esc(kallan.name)}! 🥷`; }
     const stage = $('#escape-stage');
-    stage.classList.toggle('hidden', r.correct);
-    if (fresh && !r.correct) { stage.classList.remove('play'); void stage.offsetWidth; stage.classList.add('play'); setTimeout(() => sfx.boom(), 2300); }
+    stage.classList.remove('hidden');
+    stage.classList.toggle('caught', r.correct);
+    stage.querySelector('.stage-tag').textContent = r.correct ? 'പിടിച്ചു! 🚔 ' + kallan.name : 'രക്ഷപ്പെട്ടു! 💨 ' + kallan.name;
+    if (fresh) {
+      stage.classList.remove('play'); void stage.offsetWidth; stage.classList.add('play');
+      if (r.correct) setTimeout(sfx.siren, 900); else setTimeout(() => sfx.boom(), 2300);
+    }
     $('#verdict').innerHTML = `<div class="mark ${r.correct?'ok':'no'}">${r.correct?'✓':'✗'}</div>
       <div><h3 class="${r.correct?'ok':'no'}">${title}</h3><p>${line}</p></div>`;
     const order = ['raja','rani','manthri','police','kallan'];
@@ -578,9 +691,10 @@
         <div class="e">${ri.emoji}</div><div class="n">${esc(p.name)}</div><div class="r">${ri.ml}</div>
         <div class="p ${pts?'':'zero'}">+${pts}</div></div></div>`;
     }).join('');
-    $('#btn-next').classList.toggle('hidden', !(isHost() && state.phase === 'result'));
+    const lastRound = state.round >= state.totalRounds;
+    $('#btn-next').classList.toggle('hidden', !(isHost() && state.phase === 'result' && !lastRound));
     const host = state.players.find(p => p.id === state.hostId);
-    $('#result-wait').textContent = isHost() ? '' : `Waiting for ${host ? host.name : 'host'} to deal the next round…`;
+    $('#result-wait').textContent = lastRound ? '🏆 Final scores coming up… · അവസാന സ്കോർ ഉടൻ' : (isHost() ? '' : `Waiting for ${host ? host.name : 'host'} to deal the next round…`);
     if (fresh) {
       const myPts = r.awarded[playerId];
       if (myRole && ((myRole.key === 'police' && r.correct) || (myRole.key === 'kallan' && !r.correct))) { sfx.win(); confetti(160); }

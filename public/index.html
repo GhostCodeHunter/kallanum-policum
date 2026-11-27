@@ -75,7 +75,6 @@
         <button class="btn btn-purple" data-go="join"><span>👥</span> Join Room</button>
       </div>
     </div>
-    <div class="sneak-lane" aria-hidden="true"><div class="sneaker" data-chibi></div></div>
     <div class="links">
       <button class="link" data-go="how">ⓘ How to Play · കളി നിയമം</button>
     </div>
@@ -222,6 +221,7 @@
       <div class="suspects-wrap">
         <div class="turn-banner"><b>Police's Turn</b><small id="police-q">Who is the Kallan? · കള്ളൻ ആര്?</small></div>
         <div class="suspects" id="suspects"></div>
+        <div class="taunts hidden" id="taunts"><span class="tl">🥷 Secret taunt (3 left):</span></div>
       </div>
     </div>
   </section>
@@ -230,7 +230,7 @@
   <section class="screen" id="s-result">
     <div class="ribbon">Round Result</div>
     <div class="card result-card">
-      <div class="spot-stage hidden" id="escape-stage" aria-hidden="true"><div class="spot-cone"></div><div class="spot-floor"></div><div class="escaper" data-chibi></div><div class="poof"><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="spot-stage hidden" id="escape-stage" aria-hidden="true"><div class="spot-cone"></div><div class="spot-floor"></div><div class="siren-l"></div><div class="siren-r"></div><div class="escaper" data-chibi></div><div class="stage-cuffs">⛓️</div><div class="stage-tag"></div><div class="poof"><i></i><i></i><i></i><i></i><i></i></div></div>
       <div class="verdict" id="verdict"></div>
       <div class="reveal-all" id="reveal-all"></div>
     </div>
@@ -255,6 +255,13 @@
   <div class="reactions hidden" id="reactions"></div>
 </main>
 
+<div class="pet" id="pet" role="button" tabindex="0" aria-label="Catch the Kallan">
+  <div class="pet-bubble" id="pet-bubble"></div>
+  <div class="pet-body" data-chibi></div>
+  <div class="pet-cuffs" aria-hidden="true">⛓️</div>
+  <div class="pet-poof" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="pet-hits" id="pet-hits"></div>
+</div>
 <div class="voice-bar hidden" id="voice-bar">
   <button class="voice-btn" id="btn-voice" aria-label="Join voice chat"><span class="vi">🎙️</span><span class="vt">Voice</span></button>
   <button class="voice-btn mute hidden" id="btn-mute" aria-label="Mute microphone"><span class="vi">🔈</span></button>

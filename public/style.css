@@ -451,3 +451,83 @@ svg.char{display:inline-block;vertical-align:middle;overflow:visible}
 @keyframes creditShine{to{background-position:-200% 0}}
 .credit .heart{color:#ff5a7a;display:inline-block;animation:heartBeat 1.2s ease-in-out infinite}
 @keyframes heartBeat{0%,100%{transform:scale(1)}15%{transform:scale(1.3)}30%{transform:scale(1)}45%{transform:scale(1.2)}}
+
+/* ---------- interactive Kallan pet ---------- */
+.pet{position:fixed;bottom:64px;left:20px;width:76px;height:96px;z-index:25;cursor:pointer;transition-property:left;transition-timing-function:linear;
+  -webkit-user-select:none;user-select:none;touch-action:manipulation;transition-duration:0s}
+.pet:focus-visible{outline:3px solid var(--gold-l);outline-offset:4px;border-radius:12px}
+.pet.away{opacity:0;pointer-events:none;transform:translateY(40px);transition:opacity .3s,transform .3s}
+.pet-body{width:100%;height:100%;transition:transform .2s var(--ease)}
+.pet.face-left .pet-body{transform:scaleX(-1)}
+.pet .chibi-eyes{transition:transform .12s ease-out}
+.pet:hover .pet-body{transform:translateY(-4px)}
+.pet.face-left:hover .pet-body{transform:scaleX(-1) translateY(-4px)}
+.pet.walking .leg-l,.pet.running .leg-l{animation:tiptoe .3s ease-in-out infinite alternate}
+.pet.walking .leg-r,.pet.running .leg-r{animation:tiptoe .3s ease-in-out infinite alternate-reverse}
+.pet.walking .pet-body{animation:sneakBob .6s ease-in-out infinite}
+.pet.running .leg-l,.pet.running .leg-r{animation-duration:.1s}
+.pet.running .pet-body{animation:sneakBob .2s ease-in-out infinite}
+@keyframes sneakBob{50%{translate:0 -4px}}
+.pet.scared .pet-body{animation:shake .15s infinite}
+.pet.hit .pet-body{animation:hitJump .4s var(--ease)}
+@keyframes hitJump{30%{translate:0 -26px;rotate:-12deg}100%{translate:0 0}}
+.pet.poofing .pet-body{transform:scale(0) rotate(180deg);transition:transform .35s ease-in}
+.pet.appear .pet-body{animation:appearPop .45s var(--ease)}
+@keyframes appearPop{from{transform:scale(0)}}
+.pet-poof{position:absolute;left:50%;top:55%;width:0;height:0;pointer-events:none}
+.pet-poof i{position:absolute;width:34px;height:34px;margin:-17px;border-radius:50%;background:#e4e4ee;opacity:0}
+.pet.poofing .pet-poof i{animation:petPoof .5s ease-out}
+.pet-poof i:nth-child(1){--x:-34px;--y:-20px}.pet-poof i:nth-child(2){--x:32px;--y:-24px}.pet-poof i:nth-child(3){--x:0;--y:-46px}.pet-poof i:nth-child(4){--x:-24px;--y:14px}.pet-poof i:nth-child(5){--x:26px;--y:12px}
+@keyframes petPoof{0%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(1.6)}}
+.pet-bubble{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) scale(0);transform-origin:bottom center;margin-bottom:8px;
+  background:#fff;color:var(--ink);font-weight:700;font-size:14px;padding:6px 12px;border-radius:14px;white-space:nowrap;
+  box-shadow:0 6px 14px rgba(0,0,0,.35);transition:transform .25s var(--ease);pointer-events:none;font-family:'Noto Sans Malayalam','Baloo Chettan 2',sans-serif}
+.pet-bubble::after{content:"";position:absolute;top:100%;left:50%;margin-left:-8px;border:8px solid transparent;border-top-color:#fff}
+.pet-bubble.show{transform:translateX(-50%) scale(1)}
+.pet-hits{position:absolute;top:100%;left:50%;transform:translateX(-50%);font-size:12px;color:#ffffff88;white-space:nowrap;letter-spacing:1px}
+.pet-hits b{color:var(--gold-l)}
+.pet-cuffs{position:absolute;left:50%;top:62%;font-size:30px;transform:translate(-50%,-50%) scale(0);transition:transform .4s var(--ease)}
+.pet.caught .pet-cuffs{transform:translate(-50%,-50%) scale(1)}
+.pet.caught .pet-body{animation:caughtWiggle .3s ease-in-out infinite;filter:drop-shadow(0 0 12px rgba(80,140,255,.9))}
+@keyframes caughtWiggle{0%,100%{rotate:-6deg}50%{rotate:6deg}}
+.pet.caught::before{content:"";position:absolute;inset:-30px -20px 0;border-radius:50%;animation:sirenGlow .5s steps(1) infinite;pointer-events:none}
+@keyframes sirenGlow{0%{box-shadow:-20px 0 40px rgba(255,40,40,.7)}50%{box-shadow:20px 0 40px rgba(40,100,255,.7)}}
+@media (max-width:600px){.pet{width:62px;height:78px;bottom:66px}}
+
+/* ---------- blame + taunts ---------- */
+.suspect.locked{cursor:default}
+.blames{margin-left:8px;font-size:13px;font-weight:800;background:#ffe1de;color:var(--maroon);padding:1px 8px;border-radius:10px;animation:popIn .4s var(--ease)}
+.blame-btn{margin-left:auto;border:none;border-radius:12px;padding:4px 12px;font:inherit;font-size:14px;font-weight:800;cursor:pointer;color:#fff;
+  background:linear-gradient(180deg,#ff7a6e,var(--red));box-shadow:0 3px 0 #8a1e1e;transition:transform .15s var(--ease)}
+.blame-btn:hover{transform:scale(1.08) rotate(-3deg)}
+.blame-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #8a1e1e}
+.suspect.blame-hit{animation:blameShake .5s}
+@keyframes blameShake{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.taunts{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;align-items:center}
+.taunts .tl{width:100%;font-size:13px;color:#d8ccff;font-weight:700}
+.taunt-chip{border:2px solid #555;background:#26262e;color:#fff;border-radius:16px;padding:4px 10px;font:inherit;font-size:13px;cursor:pointer;
+  font-family:'Noto Sans Malayalam','Baloo Chettan 2',sans-serif;transition:transform .15s var(--ease),background .2s}
+.taunt-chip:hover{background:#3a3a46;transform:translateY(-2px)}
+.taunt-chip:active{transform:scale(.92)}
+.taunts.spent .taunt-chip{opacity:.4;pointer-events:none}
+.taunt-float{position:fixed;top:30%;z-index:35;display:flex;align-items:center;gap:6px;pointer-events:none;animation:tauntIn 3.2s ease both}
+.taunt-float .tm{width:54px;height:68px}
+.taunt-float .tx{background:#1d1d24;color:#fff;border:2px solid #555;padding:6px 12px;border-radius:14px;font-weight:700;font-family:'Noto Sans Malayalam','Baloo Chettan 2',sans-serif;box-shadow:0 8px 18px rgba(0,0,0,.4)}
+@keyframes tauntIn{0%{opacity:0;transform:translateY(30px) scale(.6)}12%{opacity:1;transform:none}80%{opacity:1;transform:translateY(-20px)}100%{opacity:0;transform:translateY(-50px)}}
+
+/* ---------- result stage: caught variant ---------- */
+.stage-tag{position:absolute;top:10px;left:50%;transform:translateX(-50%);color:#fff;font-weight:800;font-size:18px;text-shadow:0 2px 6px #000;opacity:0;white-space:nowrap}
+.spot-stage.play .stage-tag{animation:popIn .5s var(--ease) 1.2s both;opacity:1}
+.stage-cuffs{position:absolute;left:50%;bottom:44px;font-size:34px;transform:translateX(-50%) scale(0);opacity:0}
+.siren-l,.siren-r{position:absolute;top:0;bottom:0;width:50%;opacity:0;pointer-events:none}
+.siren-l{left:0;background:radial-gradient(circle at 0 30%,rgba(255,40,40,.55),transparent 60%)}
+.siren-r{right:0;background:radial-gradient(circle at 100% 30%,rgba(40,100,255,.55),transparent 60%)}
+.spot-stage.caught.play .escaper{animation:caughtStage 3.4s ease both}
+@keyframes caughtStage{0%,10%{opacity:0;transform:translateY(20px)}18%{opacity:1;transform:none}26%{transform:translateX(-14px)}32%{transform:translateX(14px)}40%,100%{opacity:1;transform:none}}
+.spot-stage.caught.play .escaper .chibi{animation:caughtWiggle .3s ease-in-out 1.4s infinite}
+.spot-stage.caught.play .stage-cuffs{animation:cuffsOn .5s var(--ease) 1.3s both}
+@keyframes cuffsOn{from{opacity:0;transform:translateX(-50%) translateY(-60px) scale(2)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+.spot-stage.caught.play .siren-l{animation:sirenL .5s steps(1) 1.2s infinite}
+.spot-stage.caught.play .siren-r{animation:sirenL .5s steps(1) 1.45s infinite}
+@keyframes sirenL{0%{opacity:1}50%{opacity:0}}
+.spot-stage.caught .poof{display:none}

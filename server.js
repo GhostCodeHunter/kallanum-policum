@@ -90,7 +90,14 @@ function publicState(room) {
     lastResult: (room.phase === 'result' || room.phase === 'final') ? room.lastResult : null,
     history: room.history,
     voice: [...room.voice],
+    blameCounts: room.phase === 'police' ? countBlames(room) : {},
   };
+}
+
+function countBlames(room) {
+  const c = {};
+  Object.values(room.blames).forEach(t => { c[t] = (c[t] || 0) + 1; });
+  return c;
 }
 
 function broadcast(room) {
@@ -111,6 +118,8 @@ function assignRoles(room) {
   room.roles = {};
   room.players.forEach((p, i) => { room.roles[p.id] = shuffled[i]; });
   room.ready = new Set();
+  room.blames = {};
+  room.taunts = {};
   room.lastResult = null;
   room.round += 1;
   room.phase = 'reveal';
@@ -145,8 +154,11 @@ function finishRound(room, guessedId) {
     awarded,
   };
   room.history.push({ round: room.round, awarded, correct });
-  room.phase = room.round >= room.totalRounds ? 'final' : 'result';
+  room.phase = 'result';
   broadcast(room);
+  if (room.round >= room.totalRounds) {
+    setTimeout(() => { if (rooms.has(room.code) && room.phase === 'result') { room.phase = 'final'; broadcast(room); } }, 7000);
+  }
 }
 
 function newRoom(hostId, roomName, totalRounds) {
@@ -163,6 +175,8 @@ function newRoom(hostId, roomName, totalRounds) {
     lastResult: null,
     history: [],
     voice: new Set(),
+    blames: {},   // playerId -> targetId (who pointed stays secret)
+    taunts: {},   // playerId -> count this round
     timer: null,
     policeDeadline: null,
     createdAt: Date.now(),
@@ -264,6 +278,28 @@ io.on('connection', socket => {
     const role = room.roles[targetId];
     if (!role || role === 'raja' || role === 'police') return err('Pick one of the suspects.');
     finishRound(room, targetId);
+  });
+
+  // Anyone except Police/Raja may secretly point at a suspect (helps or bluffs). Anonymous.
+  socket.on('blame', ({ targetId } = {}) => {
+    const room = getRoom();
+    if (!room || room.phase !== 'police') return;
+    const mine = room.roles[me.id];
+    if (mine === 'police' || mine === 'raja') return;
+    const t = room.roles[targetId];
+    if (!t || t === 'raja' || t === 'police' || targetId === me.id) return;
+    room.blames[me.id] = targetId;
+    io.to(room.code).emit('blamed', { targetId });
+    broadcast(room);
+  });
+  const TAUNTS = ['ഞാനല്ല കള്ളൻ! 😇', 'പോലീസ് ഉറങ്ങുവാണോ? 😴', 'ശരിക്കും ആലോചിച്ചോ 🤔', 'കണ്ണ് തുറന്ന് നോക്ക്! 👀', 'Tick tock... ⏰', 'ഹി ഹി ഹി 😏'];
+  socket.on('taunt', ({ i } = {}) => {
+    const room = getRoom();
+    if (!room || room.phase !== 'police' || room.roles[me.id] === 'police') return;
+    const n = room.taunts[me.id] || 0;
+    if (n >= 3 || !TAUNTS[i]) return;
+    room.taunts[me.id] = n + 1;
+    io.to(room.code).emit('taunted', { line: TAUNTS[i] });
   });
 
   socket.on('next_round', () => {
