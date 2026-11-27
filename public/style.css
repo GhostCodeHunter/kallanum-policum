@@ -423,3 +423,5 @@ svg.char{display:inline-block;vertical-align:middle;overflow:visible}
 .spot-stage.play .poof i{animation:poof 3.4s ease-out both}
 .poof i:nth-child(1){--x:-46px;--y:-30px}.poof i:nth-child(2){--x:44px;--y:-34px}.poof i:nth-child(3){--x:0px;--y:-62px}.poof i:nth-child(4){--x:-30px;--y:6px}.poof i:nth-child(5){--x:32px;--y:4px}
 @keyframes poof{0%,66%{opacity:0;transform:translate(0,0) scale(.2)}70%{opacity:1;transform:translate(calc(var(--x)*.4),calc(var(--y)*.4)) scale(1)}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(1.8)}}
+.logo{padding-top:84px}
+@media (max-width:600px){.logo{padding-top:64px}}
